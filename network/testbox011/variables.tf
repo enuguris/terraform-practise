@@ -30,7 +30,7 @@ variable "vpc_sg_ids" {
 variable "subnet_id" {
   type 		= string
   description	= "Subnet Id in which to launch the ec2 instance"
-  default	= "subnet-0ee684dbc2a7fa8de"
+#  default	= "subnet-0ee684dbc2a7fa8de"
 } 
 
 variable "private_key_file" {

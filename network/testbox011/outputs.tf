@@ -1,3 +1,3 @@
-output "this" {
-  value 	= module.this[*]
+output "private_ip" {
+  value 	= module.this[*].private_ip
 }
