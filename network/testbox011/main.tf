@@ -27,6 +27,12 @@ provider "azurerm" {
 locals {
   deploy_instance = "true"
   vpc_id = "vpc-0926212a7fae4b2ff"
+
+  user_data = <<EOF
+#!/bin/bash
+hostnamectl set-hostname ${var.host_name}
+EOF
+
 }
 
 
@@ -73,6 +79,8 @@ module "this" {
   vpc_security_group_ids = data.aws_security_groups.general.ids
   subnet_id              = tolist(data.aws_subnet_ids.test-vpc-public-us-east-1a.ids)[0]
   private_ip		 = var.private_ip
+ 
+  user_data_base64 	 = base64encode(local.user_data)
 
   root_block_device = [
     {
@@ -108,6 +116,7 @@ module "this" {
 
 }
 
+/*
 resource "null_resource" "this" {
 
   count                  = local.deploy_instance == "true" ? 1 : 0
@@ -129,6 +138,7 @@ resource "null_resource" "this" {
 
 }
 
+
 resource "aws_ebs_volume" "ebs_vol_001" {
   count                  = local.deploy_instance == "true" ? 1 : 0
   availability_zone = element(module.this[count.index].availability_zone, 0)
@@ -149,3 +159,4 @@ resource "aws_volume_attachment" "this_va" {
   instance_id 	= element(module.this[count.index].id, 0)
 }
 
+*/
