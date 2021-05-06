@@ -40,39 +40,14 @@ module "general-securitygroup" {
   description = "Allow SSH access"
   vpc_id = local.vpc_id
 
-  ingress_cidr_blocks = ["10.0.0.0/16", "0.0.0.0/0"]
-  ingress_rules       = ["ssh-tcp", "all-icmp"]
+  ingress_cidr_blocks = ["10.0.0.0/16"]
+  ingress_rules       = ["all-all"]
   egress_rules        = ["all-all"]
 
   ingress_with_cidr_blocks = [
     {
-      rule        = "nfs-tcp"
-      cidr_blocks = "10.100.1.10/32"
-    },
-    {
       rule        = "postgresql-tcp"
       cidr_blocks = "30.30.30.30/32"
-    },
-    {
-      from_port   = 10
-      to_port     = 20
-      protocol    = 6
-      description = "Service name"
-      cidr_blocks = "10.10.0.0/20"
-    },
-    {
-      from_port   = 0
-      to_port     = 65355
-      protocol    = 6
-      description = "nfs-test-tcp"
-      cidr_blocks = "10.100.1.10/32"
-    },
-    {
-      from_port   = 0
-      to_port     = 65335
-      protocol    = 17
-      description = "nfs-test-udp"
-      cidr_blocks = "10.100.1.10/32"
     },
   ]
 
