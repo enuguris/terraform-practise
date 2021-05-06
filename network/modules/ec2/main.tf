@@ -78,7 +78,6 @@ data "template_cloudinit_config" "config" {
   }
 }
 
-
 module "ec2-instance" {
   source = "git::https://github.com/terraform-aws-modules/terraform-aws-ec2-instance?ref=v2.17.0"
 
@@ -90,9 +89,7 @@ module "ec2-instance" {
   vpc_security_group_ids      = data.aws_security_groups.sg.ids
   associate_public_ip_address = true
   private_ip                  = var.private_ip
-
-  user_data_base64 = data.template_cloudinit_config.config.rendered
-
+  user_data_base64            = data.template_cloudinit_config.config.rendered
 
   root_block_device = [
     {
@@ -100,42 +97,32 @@ module "ec2-instance" {
       volume_size = var.root_volume_size
       encrypted   = true
       kms_key_id  = data.aws_kms_key.key.arn
-    },
+    }
   ]
-
-  ebs_block_device = []
 
   tags = merge({
     Name = var.host_name
   }, local.tags)
 
-  volume_tags = merge({ Name = "${var.host_name}_vol" }, local.tags)
+  volume_tags = merge({ Name = "${var.host_name}_root_volume" }, local.tags)
 }
 
-module "vols" {
-  source = "../ebs_volumes"
-
-  ebs_block_devices = var.ebs_block_devices
-}
-
-
-/*
-resource "aws_ebs_volume" "ebs_data_disk_001" {
-  availability_zone = module.this.az
-  size              = 2
-  type              = "gp2"
+resource "aws_ebs_volume" "ebs" {
+  for_each          = { for d in var.ebs_block_devices : d.disk_name => d }
+  availability_zone = element(module.ec2-instance.availability_zone, 0)
+  size              = each.value.size
+  type              = each.value.type
+  kms_key_id        = data.aws_kms_key.key.arn
   encrypted         = true
-  kms_key_id        = module.this.kms_key_arn
 
-  tags = merge({
-    Name = "${module.this.host_name}_ebs_data_disk_001"
-  }, module.this.tags)
-
+  tags = {
+    Name = "${var.host_name}_${each.key}"
+  }
 }
 
-resource "aws_volume_attachment" "this_data_disk_001" {
-  device_name   = "/dev/sdd"
-  volume_id     = aws_ebs_volume.ebs_data_disk_001.id
-  instance_id   = module.this.instance_id
+resource "aws_volume_attachment" "ebs_att" {
+  for_each    = { for t in var.ebs_block_devices : t.device_name => t }
+  device_name = each.key
+  volume_id   = aws_ebs_volume.ebs[each.value.disk_name].id
+  instance_id = element(module.ec2-instance.id, 0)
 }
-*/

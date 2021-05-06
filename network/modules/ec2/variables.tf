@@ -10,8 +10,17 @@ variable "subnet_name" { type = string }
 variable "sg_names" { type = list(string) }
 variable "init_cfg_vers" { type = string }
 variable "vpc_name" { type = string }
-variable "root_volume_size" { 
-  type = string 
-  default = 10 
+variable "root_volume_size" {
+  type    = string
+  default = 10
 }
-
+variable "ebs_block_devices" {
+  type = list(object({
+    size        = string,
+    type        = string,
+    disk_name   = string
+    device_name = string
+    extra_tags  = map(string)
+  }))
+  default = []
+}
