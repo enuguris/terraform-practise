@@ -16,11 +16,11 @@ variable "root_volume_size" {
 }
 variable "ebs_block_devices" {
   type = list(object({
-    size        = string,
-    type        = string,
+    size        = string
+    type        = string
     disk_name   = string
     device_name = string
-    extra_tags  = map(string)
+    additional_tags = map(string)
   }))
   default = []
 }

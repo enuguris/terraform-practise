@@ -104,7 +104,7 @@ module "ec2-instance" {
     Name = var.host_name
   }, local.tags)
 
-  volume_tags = merge({ Name = "${var.host_name}_root_volume" }, local.tags)
+  #volume_tags = merge({ Name = "${var.host_name}_root_volume" }, local.tags)
 }
 
 resource "aws_ebs_volume" "ebs" {

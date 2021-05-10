@@ -44,7 +44,7 @@ module "this" {
       type              = "gp2"
       disk_name         = "datadisk001"
       device_name       = "/dev/sdd"
-      extra_tags        = { eRequest = "1234" }
+      additional_tags   = { eReq = "1234", Maintainer = "terraform" }
     },
   ]
 }
