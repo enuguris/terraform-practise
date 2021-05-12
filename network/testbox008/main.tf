@@ -13,20 +13,18 @@ provider "aws" {
 }
 
 module "ec2" {
-  source        = "../modules/aws_instance"
+  source = "../modules/aws_instance"
 
   vpc_name      = "test-vpc"
   ami           = "ami-0f85893b3253ed13d"
   host_name     = "testbox008"
   private_ip    = "10.0.3.7"
-  environment   = "development"
   region        = "us-east-1"
-  billing       = "free tier"
   sg_names      = ["general-securitygroup001"]
   subnet_name   = "test-vpc-public-us-east-1a"
   volume_size   = 10
   instance_type = "t3.micro"
-  tags          = { Environment = "development", Maintainer = "terraform", Billing = "Free Tier" }
+  tags = { Billing = "PAYGUR", Environment = "development", Maintainer  = "terraform"}
 
   ebs_block_devices = [
     {
@@ -45,3 +43,9 @@ module "ec2" {
     },
   ]
 }
+
+/*
+output "private_ip" {
+  value = module.ec2.private_ip
+}
+*/

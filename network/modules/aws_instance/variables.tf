@@ -1,11 +1,8 @@
-variable "vpc_id" { default = "vpc-0926212a7fae4b2ff" }
 variable "ami" { default = "ami-065db1a25541c1a83" }
 variable "instance_type" { default = "t2.micro" }
 variable "host_name" { type = string }
 variable "private_ip" { type = string }
-variable "environment" { type = string }
 variable "region" { type = string }
-variable "billing" { type = string }
 variable "subnet_name" { type = string }
 variable "sg_names" { type = list(string) }
 variable "vpc_name" { type = string }
@@ -37,11 +34,6 @@ variable "ebs_optimized" {
   default     = false
 }
 
-variable "tags" {
-  type        = map(string)
-  description = "Tags"
-}
-
 variable "monitoring" {
   type        = bool
   description = "Set monitoring to true/false, default is true"
@@ -64,4 +56,13 @@ variable "http_tokens" {
   type        = string
   description = "Valid values include optional or required. Defaults to optional."
   default     = "optional"
+}
+
+variable "tags" {
+  type = object({
+    Environment = string
+    Maintainer = string
+    Billing = string 
+  })
+  description = "Tags"
 }

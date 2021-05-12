@@ -36,7 +36,7 @@ data "aws_security_groups" "sg" {
 
   filter {
     name   = "vpc-id"
-    values = [var.vpc_id]
+    values = tolist(data.aws_vpcs.selected.ids)
   }
 }
 
