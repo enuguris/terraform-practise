@@ -31,22 +31,20 @@ module "ec2" {
     {
       size            = "1"
       type            = "gp2"
-      disk_name       = "datadisk001"
+      disk_name       = "www_data_01"
       device_name     = "/dev/sdd"
       additional_tags = { eReq = "1234", Maintainer = "terraform" }
     },
     {
       size            = "1"
       type            = "gp2"
-      disk_name       = "datadisk002"
-      device_name     = "/dev/sdb"
+      disk_name       = "www_log_02"
+      device_name     = "/dev/sdf"
       additional_tags = { eReq = "1234", Maintainer = "terraform" }
     },
   ]
 }
 
-/*
 output "private_ip" {
   value = module.ec2.private_ip
 }
-*/

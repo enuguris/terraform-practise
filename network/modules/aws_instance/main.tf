@@ -27,6 +27,13 @@ locals {
       k => (length(local.selected_subnet_id) != 0 ? (contains(v.ids, element(local.selected_subnet_id, 0)) ? true : false) : false)
     } : k if v == true
   ]
+
+  tags = {
+    "ab:Environment" = var.Environment
+    "ab:Maintainer"  = var.Maintainer
+    "ab.Billing"     = var.Billing
+  }
+
 }
 
 data "aws_vpcs" "all_vpcs" {
@@ -79,11 +86,11 @@ data "template_cloudinit_config" "config" {
 }
 
 resource "aws_instance" "this" {
-  ami           = var.ami
-  ebs_optimized = var.ebs_optimized
-  instance_type = var.instance_type
-  monitoring    = var.monitoring
-  private_ip    = var.private_ip
+  ami                    = var.ami
+  ebs_optimized          = var.ebs_optimized
+  instance_type          = var.instance_type
+  monitoring             = var.monitoring
+  private_ip             = var.private_ip
   subnet_id              = tolist(local.selected_subnet_id)[0]
   vpc_security_group_ids = data.aws_security_groups.sg.ids
   user_data_base64       = data.template_cloudinit_config.config.rendered
@@ -102,16 +109,13 @@ resource "aws_instance" "this" {
     volume_type           = var.volume_type
 
     tags = merge({
-      Name = "${var.host_name}_root_volume"
-    }, var.tags)
+      Name = "disk_os_${var.volume_type}_${var.host_name}"
+    }, local.tags, var.tags)
   }
 
   tags = merge({
     Name = var.host_name
-    "ab:Environment" = var.Environment
-    "ab:Maintainer" = var.Maintainer
-    "ab.Billing" = var.Billing
-  }, var.tags)
+  }, local.tags, var.tags)
 
   credit_specification {
     cpu_credits = "standard"
@@ -131,7 +135,7 @@ resource "aws_ebs_volume" "ebs" {
   encrypted         = true
 
   tags = merge({
-    Name = "${var.host_name}_${each.key}"
+    Name = "disk_dd_${each.value.type}_${var.host_name}_${each.value.disk_name}"
   }, each.value.additional_tags)
 }
 
@@ -140,5 +144,4 @@ resource "aws_volume_attachment" "ebs_att" {
   device_name  = each.key
   volume_id    = aws_ebs_volume.ebs[each.value.disk_name].id
   instance_id  = aws_instance.this.id
-  skip_destroy = true
 }

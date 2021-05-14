@@ -18,8 +18,8 @@ module "vpc" {
 }
 
 resource "aws_kms_key" "kms_key" {
-  description             = "KMS key to encrypt/encrypt ec2 instance root volumes"
-  enable_key_rotation     = "true"
+  description         = "KMS key to encrypt/encrypt ec2 instance root volumes"
+  enable_key_rotation = "true"
 
   tags = {
     Name = "ebs-kms-key"

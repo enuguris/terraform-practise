@@ -63,7 +63,7 @@ variable "Maintainer" {}
 variable "Billing" {}
 
 variable "tags" {
-  type = map
+  type        = map(any)
   description = "Tags"
-  default = {}
+  default     = {}
 }
