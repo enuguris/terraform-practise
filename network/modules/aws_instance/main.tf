@@ -127,7 +127,7 @@ resource "aws_instance" "this" {
 }
 
 resource "aws_ebs_volume" "ebs" {
-  for_each          = { for d in var.ebs_block_devices : d.disk_name => d }
+  for_each          = { for d in var.ebs_block_devices : d.disk_name_suffix => d }
   availability_zone = aws_instance.this.availability_zone
   size              = each.value.size
   type              = each.value.type
@@ -142,6 +142,6 @@ resource "aws_ebs_volume" "ebs" {
 resource "aws_volume_attachment" "ebs_att" {
   for_each    = { for t in var.ebs_block_devices : t.device_name => t }
   device_name = each.key
-  volume_id   = aws_ebs_volume.ebs[each.value.disk_name].id
+  volume_id   = aws_ebs_volume.ebs[each.value.disk_name_suffix].id
   instance_id = aws_instance.this.id
 }
