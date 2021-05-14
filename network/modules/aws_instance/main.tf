@@ -135,13 +135,13 @@ resource "aws_ebs_volume" "ebs" {
   encrypted         = true
 
   tags = merge({
-    Name = "disk_dd_${each.value.type}_${var.host_name}_${each.value.disk_name}"
+    Name = "disk_dd_${each.value.type}_${var.host_name}_${each.value.disk_name_suffix}"
   }, each.value.additional_tags)
 }
 
 resource "aws_volume_attachment" "ebs_att" {
-  for_each     = { for t in var.ebs_block_devices : t.device_name => t }
-  device_name  = each.key
-  volume_id    = aws_ebs_volume.ebs[each.value.disk_name].id
-  instance_id  = aws_instance.this.id
+  for_each    = { for t in var.ebs_block_devices : t.device_name => t }
+  device_name = each.key
+  volume_id   = aws_ebs_volume.ebs[each.value.disk_name].id
+  instance_id = aws_instance.this.id
 }

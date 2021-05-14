@@ -22,25 +22,25 @@ module "ec2" {
   sg_names      = ["mytestsg"]
   volume_size   = 10
   instance_type = "t2.micro"
-  Billing = "PAYGUR"
-  Environment = "development"
-  Maintainer  = "terraform"
-  tags = { erequestnumber = "ER#12345" }
+  Billing       = "PAYGUR"
+  Environment   = "development"
+  Maintainer    = "terraform"
+  tags          = { erequestnumber = "ER#12345" }
 
   ebs_block_devices = [
     {
-      size            = "1"
-      type            = "gp2"
-      disk_name       = "www_data_01"
-      device_name     = "/dev/sdd"
-      additional_tags = { eReq = "1234", Maintainer = "terraform" }
+      size             = "1"
+      type             = "gp2"
+      disk_name_suffix = "www_data_01"
+      device_name      = "/dev/sdd"
+      additional_tags  = { eReq = "1234", Maintainer = "terraform" }
     },
     {
-      size            = "1"
-      type            = "gp2"
-      disk_name       = "www_log_02"
-      device_name     = "/dev/sdf"
-      additional_tags = { eReq = "1234", Maintainer = "terraform" }
+      size             = "1"
+      type             = "gp2"
+      disk_name_suffix = "www_log_02"
+      device_name      = "/dev/sdf"
+      additional_tags  = { eReq = "1234", Maintainer = "terraform" }
     },
   ]
 }

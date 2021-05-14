@@ -19,11 +19,11 @@ variable "volume_type" {
 }
 variable "ebs_block_devices" {
   type = list(object({
-    size            = string
-    type            = string
-    disk_name       = string
-    device_name     = string
-    additional_tags = map(string)
+    size             = string
+    type             = string
+    disk_name_suffix = string
+    device_name      = string
+    additional_tags  = map(string)
   }))
   default = []
 }
