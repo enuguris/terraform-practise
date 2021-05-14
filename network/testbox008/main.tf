@@ -15,16 +15,17 @@ provider "aws" {
 module "ec2" {
   source = "../modules/aws_instance"
 
-  vpc_name      = "test-vpc"
   ami           = "ami-0f85893b3253ed13d"
   host_name     = "testbox008"
-  private_ip    = "10.0.3.7"
+  private_ip    = "172.31.64.10"
   region        = "us-east-1"
-  sg_names      = ["general-securitygroup001"]
-  subnet_name   = "test-vpc-public-us-east-1a"
+  sg_names      = ["mytestsg"]
   volume_size   = 10
-  instance_type = "t3.micro"
-  tags = { Billing = "PAYGUR", Environment = "development", Maintainer  = "terraform"}
+  instance_type = "t2.micro"
+  Billing = "PAYGUR"
+  Environment = "development"
+  Maintainer  = "terraform"
+  tags = { erequestnumber = "ER#12345" }
 
   ebs_block_devices = [
     {

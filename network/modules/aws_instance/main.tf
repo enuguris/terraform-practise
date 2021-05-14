@@ -11,21 +11,35 @@ locals {
   kms_key_map = {
     "us-east-1" = "f3440599-bacc-4eca-8312-6d5c146a3d19"
   }
+
+  all_subnets_ids = flatten([for k in data.aws_subnet_ids.subnet_ids : k.ids])
+
+  selected_subnet_id = [
+    for k, v in {
+      for s in data.aws_subnet.subnets :
+      s.id => (cidrhost(format("%s/%s", var.private_ip, split("/", s.cidr_block)[1]), 0) == split("/", s.cidr_block)[0] ? true : false)
+    } : k if v == true
+  ]
+
+  selected_vpc_id = [
+    for k, v in {
+      for k, v in data.aws_subnet_ids.subnet_ids :
+      k => (length(local.selected_subnet_id) != 0 ? (contains(v.ids, element(local.selected_subnet_id, 0)) ? true : false) : false)
+    } : k if v == true
+  ]
 }
 
-data "aws_vpcs" "selected" {
-  tags = {
-    Name = var.vpc_name
-  }
+data "aws_vpcs" "all_vpcs" {
 }
 
-data "aws_subnet_ids" "subnet_name" {
-  vpc_id = tolist(data.aws_vpcs.selected.ids)[0]
+data "aws_subnet_ids" "subnet_ids" {
+  for_each = data.aws_vpcs.all_vpcs.ids
+  vpc_id   = each.value
+}
 
-  filter {
-    name   = "tag:Name"
-    values = [var.subnet_name]
-  }
+data "aws_subnet" "subnets" {
+  for_each = toset(local.all_subnets_ids)
+  id       = each.key
 }
 
 data "aws_security_groups" "sg" {
@@ -36,7 +50,7 @@ data "aws_security_groups" "sg" {
 
   filter {
     name   = "vpc-id"
-    values = tolist(data.aws_vpcs.selected.ids)
+    values = tolist(local.selected_vpc_id)
   }
 }
 
@@ -65,12 +79,12 @@ data "template_cloudinit_config" "config" {
 }
 
 resource "aws_instance" "this" {
-  ami                    = var.ami
-  ebs_optimized          = var.ebs_optimized
-  instance_type          = var.instance_type
-  monitoring             = var.monitoring
-  private_ip             = var.private_ip
-  subnet_id              = tolist(data.aws_subnet_ids.subnet_name.ids)[0]
+  ami           = var.ami
+  ebs_optimized = var.ebs_optimized
+  instance_type = var.instance_type
+  monitoring    = var.monitoring
+  private_ip    = var.private_ip
+  subnet_id              = tolist(local.selected_subnet_id)[0]
   vpc_security_group_ids = data.aws_security_groups.sg.ids
   user_data_base64       = data.template_cloudinit_config.config.rendered
 
@@ -94,6 +108,9 @@ resource "aws_instance" "this" {
 
   tags = merge({
     Name = var.host_name
+    "ab:Environment" = var.Environment
+    "ab:Maintainer" = var.Maintainer
+    "ab.Billing" = var.Billing
   }, var.tags)
 
   credit_specification {
@@ -106,7 +123,7 @@ resource "aws_instance" "this" {
 }
 
 resource "aws_ebs_volume" "ebs" {
-  for_each          = { for d in var.ebs_block_devices: d.disk_name => d }
+  for_each          = { for d in var.ebs_block_devices : d.disk_name => d }
   availability_zone = aws_instance.this.availability_zone
   size              = each.value.size
   type              = each.value.type
@@ -119,8 +136,9 @@ resource "aws_ebs_volume" "ebs" {
 }
 
 resource "aws_volume_attachment" "ebs_att" {
-  for_each    = { for t in var.ebs_block_devices: t.device_name => t }
-  device_name = each.key
-  volume_id   = aws_ebs_volume.ebs[each.value.disk_name].id
-  instance_id = aws_instance.this.id
+  for_each     = { for t in var.ebs_block_devices : t.device_name => t }
+  device_name  = each.key
+  volume_id    = aws_ebs_volume.ebs[each.value.disk_name].id
+  instance_id  = aws_instance.this.id
+  skip_destroy = true
 }

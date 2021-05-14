@@ -3,9 +3,9 @@ variable "instance_type" { default = "t2.micro" }
 variable "host_name" { type = string }
 variable "private_ip" { type = string }
 variable "region" { type = string }
-variable "subnet_name" { type = string }
+#variable "subnet_name" { type = string }
 variable "sg_names" { type = list(string) }
-variable "vpc_name" { type = string }
+#variable "vpc_name" { type = string }
 variable "volume_size" {
   type        = number
   description = "Volume Size"
@@ -58,11 +58,12 @@ variable "http_tokens" {
   default     = "optional"
 }
 
+variable "Environment" {}
+variable "Maintainer" {}
+variable "Billing" {}
+
 variable "tags" {
-  type = object({
-    Environment = string
-    Maintainer = string
-    Billing = string 
-  })
+  type = map
   description = "Tags"
+  default = {}
 }
