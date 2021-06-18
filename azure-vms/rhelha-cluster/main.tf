@@ -13,7 +13,7 @@ provider "azurerm" {
 }
 
 module "hacluster" {
-  source = "../modules/azurerm-linuxmultivms"
+  source = "../modules/rhel-hacluster"
 
   cluster = {
     node1 = {
@@ -51,7 +51,7 @@ module "hacluster" {
   frontend_private_ip_address_allocation = "Static"
   frontend_private_ip_address            = "10.0.1.20"
   lb_sku                                 = "Basic"
-  lb_name                                   = "lb-rhelha"
+  lb_name                                = "lb-rhelha"
   enable_floating_ip                     = true
 
   lb_port = {
