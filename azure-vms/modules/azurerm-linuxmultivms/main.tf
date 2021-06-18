@@ -85,6 +85,22 @@ module "shared_disk" {
   tags                = var.tags
 }
 
+module "lb" {
+  source                                 = "../azurerm-lb"
+  resource_group_name                    = data.azurerm_resource_group.rg.name
+  type                                   = var.lb_type
+  frontend_name                          = var.frontend_name
+  frontend_subnet_id                     = data.azurerm_subnet.snet.id
+  frontend_private_ip_address_allocation = var.frontend_private_ip_address_allocation
+  frontend_private_ip_address            = var.frontend_private_ip_address
+  lb_sku                                 = var.lb_sku
+  name                                   = var.lb_name
+  enable_floating_ip                     = var.enable_floating_ip
+  lb_port                                = var.lb_port
+  lb_probe                               = var.lb_probe
+  tags                                   = var.tags
+}
+
 resource "azurerm_network_interface" "primary_nic" {
   for_each            = var.cluster
   name                = "${each.value.host_name}_nic1"
@@ -96,10 +112,16 @@ resource "azurerm_network_interface" "primary_nic" {
     subnet_id                     = data.azurerm_subnet.snet.id
     private_ip_address_allocation = each.value.private_ip_addr_allocation
     private_ip_address            = each.value.private_ipaddress
-    private_ip_address_version    = each.value.ip_addr_version
     primary                       = true
     public_ip_address_id          = data.azurerm_public_ip.public_ip[each.key].id
   }
+}
+
+resource "azurerm_network_interface_backend_address_pool_association" "bgpool_assoc" {
+  for_each                = var.cluster
+  network_interface_id    = data.azurerm_network_interface.primary_nic[each.key].id
+  ip_configuration_name   = element(data.azurerm_network_interface.primary_nic[each.key].ip_configuration.*.name, 0)
+  backend_address_pool_id = module.lb.azurerm_lb_backend_address_pool_id
 }
 
 resource "azurerm_public_ip" "pip" {

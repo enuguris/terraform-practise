@@ -21,14 +21,12 @@ module "hacluster" {
       private_ip_addr_allocation = "Static"
       public_ip_addr_allocation  = "Static"
       private_ipaddress          = "10.0.1.10"
-      ip_addr_version            = "IPv4"
     },
     node2 = {
       host_name                  = "azvm002"
       private_ip_addr_allocation = "Static"
       public_ip_addr_allocation  = "Static"
       private_ipaddress          = "10.0.1.11"
-      ip_addr_version            = "IPv4"
     }
   }
 
@@ -36,7 +34,7 @@ module "hacluster" {
   nsg_name                  = "az_nsg_01"
   vnet_name                 = "az_vnet_eastus"
   snet_name                 = "snet_general_001"
-  vm_size                   = "Standard_D4s_v3"
+  vm_size                   = "Standard_D2s_v3"
   admin_username            = "vmimport"
   ssh_pubkey_path           = "~/.ssh/id_rsa.pub"
   enable_avset              = true
@@ -47,5 +45,24 @@ module "hacluster" {
   max_shares                = "2"
   shared_disk_size_gb       = "256"
   shared_disk_name          = "rhelha-cluster1-shareddisk01"
-  tags                      = { environment = "development" }
+
+  lb_type                                = "private"
+  frontend_name                          = "ha-lb"
+  frontend_private_ip_address_allocation = "Static"
+  frontend_private_ip_address            = "10.0.1.20"
+  lb_sku                                 = "Basic"
+  lb_name                                   = "lb-rhelha"
+  enable_floating_ip                     = true
+
+  lb_port = {
+    http  = ["80", "Tcp", "80"]
+    https = ["443", "Tcp", "443"]
+  }
+
+  lb_probe = {
+    http  = ["Tcp", "80", ""]
+    http2 = ["Http", "1443", "/"]
+  }
+
+  tags = { environment = "development" }
 }

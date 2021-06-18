@@ -18,34 +18,6 @@ variable "snet_name" {
   description = "Subnet"
 }
 
-/*
-variable "host_name" {
-  type        = string
-  description = "HostName"
-}
-
-variable "private_ip_addr_allocation" {
-  type        = string
-  description = "Can be of type Static/Dynamic"
-}
-
-variable "public_ip_addr_allocation" {
-  type        = string
-  description = "Can be of type Static/Dynamic"
-}
-
-variable "private_ipaddress" {
-  type        = string
-  description = "Private IP Address"
-}
-
-variable "ip_addr_version" {
-  type        = string
-  description = "IPv4 or IPv6"
-  default     = "IPv4"
-}
-*/
-
 variable "vm_size" {
   type        = string
   description = "VM Size"
@@ -152,7 +124,6 @@ variable "cluster" {
     private_ip_addr_allocation = string
     public_ip_addr_allocation  = string
     private_ipaddress          = string
-    ip_addr_version            = string
   }))
   description = "cluster values"
 }
@@ -183,4 +154,56 @@ variable "max_shares" {
   description = "Max Shares"
   default     = 2
 }
+
+variable "lb_type" {
+  description = "Defined if the loadbalancer is private or public"
+  type        = string
+  default     = "private"
+}
+
+variable "frontend_name" {
+  description = "Specifies the name of the frontend ip configuration."
+  type        = string
+}
+
+variable "frontend_private_ip_address" {
+  description = "(Optional) Private ip address to assign to frontend. Use it with type = private"
+  type        = string
+  default     = ""
+}
+
+variable "frontend_private_ip_address_allocation" {
+  description = "Frontend ip allocation type (Static or Dynamic)"
+  type        = string
+}
+
+variable "lb_sku" {
+  description = "The SKU of the Azure Load Balancer. Accepted values are Basic and Standard."
+  type        = string
+  default     = "Basic"
+}
+
+variable "lb_port" {
+  description = "Protocols to be used for lb rules. Format as [frontend_port, protocol, backend_port]"
+  type        = map(any)
+  default     = {}
+}
+
+variable "lb_probe" {
+  description = "Protocols to be used for lb health probes. Format as [protocol, port, request_path]"
+  type        = map(any)
+  default     = {}
+}
+
+variable "lb_name" {
+  description = "Name of the load balancer."
+  type        = string
+}
+
+variable "enable_floating_ip" {
+  description = "Enable floating ip. Default is false."
+  type        = bool
+  default     = false
+}
+
 
