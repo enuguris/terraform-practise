@@ -1,69 +1,74 @@
 variable "resource_group_name" {
-  type        = string
   description = "Resource Group Name"
+  type        = string
 }
 
 variable "nsg_name" {
-  type        = string
   description = "Network Security Group"
+  type        = string
 }
 
 variable "vnet_name" {
+  description = "Virtual Network Name"
   type        = string
-  description = "Virtual Network"
+}
+
+variable "bootdiag_storage_account" {
+  description = "Storage Account to store boot diagnostic"
+  type        = string
 }
 
 variable "snet_name" {
+  description = "Subnet Name"
   type        = string
-  description = "Subnet"
 }
 
 variable "vm_size" {
-  type        = string
   description = "VM Size"
+  type        = string
   default     = "Standard_A2_V2"
 }
 
 variable "admin_username" {
-  type        = string
   description = "SSH Admin Username"
+  type        = string
   default     = "vmimport"
 }
 
 variable "ssh_pubkey_path" {
-  type        = string
   description = "SSH PublicKey Path"
+  type        = string
   default     = "~/.ssh/id_rsa.pub"
 }
 
 variable "publisher" {
+  description = "Publisher Name"
   type        = string
-  description = "Publisher"
   default     = "RedHat"
 }
 
 variable "offer" {
-  type        = string
   description = "Offered by"
+  type        = string
   default     = "RHEL"
 }
 
 
 variable "sku" {
-  type        = string
   description = "SKU"
+  type        = string
   default     = "8_4"
 }
 
 variable "os_version" {
-  type        = string
   description = "OS Version"
+  type        = string
   default     = "latest"
 }
 
 variable "license_type" {
-  type        = string
   description = "Licence Type"
+  type        = string
   default     = "RHEL_BYOS"
 }
 
@@ -78,14 +83,14 @@ variable "plan" {
 }
 
 variable "caching" {
-  type        = string
   description = "Disk Cache Type"
+  type        = string
   default     = "ReadWrite"
 }
 
 variable "storage_account_type" {
-  type        = string
   description = "Storage Account Type"
+  type        = string
   default     = "Standard_LRS"
 }
 
@@ -95,31 +100,31 @@ variable "tags" {
 }
 
 variable "enable_avset" {
-  type        = bool
   description = "Create Availibility Set - true/false"
+  type        = bool
   default     = false
 }
 
 variable "enable_ppg" {
-  type        = bool
   description = "Create Proximity Placement Group - true/false"
+  type        = bool
   default     = false
 }
 
 variable "availability_set" {
-  type        = string
   description = "Availability Set Name"
+  type        = string
   default     = ""
 }
 
 variable "proximity_placement_group" {
-  type        = string
   description = "Proximity Placement Group Name"
+  type        = string
   default     = ""
 }
 
 variable "cluster" {
-  description = "cluster values"
+  description = "Map of cluster nodes"
   type = map(object({
     host_name                  = string
     private_ip_addr_allocation = string
@@ -128,19 +133,19 @@ variable "cluster" {
 }
 
 variable "create_shareddisk" {
+  description = "Create Shared Disk"
   type        = bool
   default     = false
-  description = "Create Shared Disk"
 }
 
 variable "shared_disk_name" {
-  type        = string
   description = "Shared Disk Name"
+  type        = string
 }
 
 variable "shared_disk_size_gb" {
-  type        = number
   description = "Disk Size in GB"
+  type        = number
 
   validation {
     condition     = var.shared_disk_size_gb >= 256
@@ -149,8 +154,8 @@ variable "shared_disk_size_gb" {
 }
 
 variable "max_shares" {
-  type        = number
   description = "Max Shares"
+  type        = number
   default     = 2
 }
 

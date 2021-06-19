@@ -53,7 +53,7 @@ data "azurerm_network_interface" "primary_nic" {
 }
 
 data "azurerm_storage_account" "stacbootdiaglnx" {
-  name                = "stacbootdiaglnx"
+  name                = var.bootdiag_storage_account
   resource_group_name = data.azurerm_resource_group.rg.name
 }
 
