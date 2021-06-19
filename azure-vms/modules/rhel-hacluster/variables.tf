@@ -119,12 +119,12 @@ variable "proximity_placement_group" {
 }
 
 variable "cluster" {
+  description = "cluster values"
   type = map(object({
     host_name                  = string
     private_ip_addr_allocation = string
     private_ipaddress          = string
   }))
-  description = "cluster values"
 }
 
 variable "create_shareddisk" {
@@ -228,4 +228,18 @@ variable "idle_timeout_in_minutes" {
   description = "TCP connections idle timeout in mins. Valid values between 4 and 30 minutes. Defaults to 4 mins"
   type        = number
   default     = 4
+}
+
+variable "data_disks" {
+  description = "List of managed data disk values as key/values"
+  type = list(object({
+    host_name            = string
+    disk_name            = string
+    storage_account_type = string
+    create_option        = string
+    caching              = string
+    disk_size_gb         = number
+    lun_id               = number
+  }))
+  default = []
 }

@@ -16,17 +16,56 @@ module "hacluster" {
   source = "../modules/rhel-hacluster"
 
   cluster = {
-    node1 = {
+    azvm001 = {
       host_name                  = "azvm001"
       private_ip_addr_allocation = "Static"
       private_ipaddress          = "10.0.1.10"
     },
-    node2 = {
+    azvm002 = {
       host_name                  = "azvm002"
       private_ip_addr_allocation = "Static"
       private_ipaddress          = "10.0.1.11"
     }
   }
+
+  data_disks = [
+    {
+      host_name            = "azvm001"
+      disk_name            = "datadisk01"
+      storage_account_type = "Standard_LRS"
+      create_option        = "Empty"
+      caching              = "ReadWrite"
+      disk_size_gb         = 1
+      lun_id               = 1
+    },
+    {
+      host_name            = "azvm002"
+      disk_name            = "datadisk01"
+      storage_account_type = "Standard_LRS"
+      create_option        = "Empty"
+      caching              = "ReadWrite"
+      disk_size_gb         = 1
+      lun_id               = 1
+    },
+    {
+      host_name            = "azvm001"
+      disk_name            = "datadisk02"
+      storage_account_type = "Standard_LRS"
+      create_option        = "Empty"
+      caching              = "ReadWrite"
+      disk_size_gb         = 1
+      lun_id               = 2
+    },
+    {
+      host_name            = "azvm002"
+      disk_name            = "datadisk02"
+      storage_account_type = "Standard_LRS"
+      create_option        = "Empty"
+      caching              = "ReadWrite"
+      disk_size_gb         = 1
+      lun_id               = 2
+    }
+  ]
 
   resource_group_name       = "rg-rhelha"
   nsg_name                  = "az_nsg_01"

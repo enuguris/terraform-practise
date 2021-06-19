@@ -171,6 +171,46 @@ resource "azurerm_template_deployment" "sdisk_deployment" {
 
 ########################################################################################
 #										       #
+#                     ASSOCIATE SHARED DISK TO LINUX VMS                               #
+#										       #
+########################################################################################
+
+resource "azurerm_virtual_machine_data_disk_attachment" "sd_attach" {
+  for_each           = var.cluster
+  managed_disk_id    = data.azurerm_managed_disk.shareddisk.id
+  virtual_machine_id = data.azurerm_virtual_machine.vm[each.key].id
+  caching            = "None"
+  lun                = "10"
+}
+
+########################################################################################
+#										       #
+#                              MANAGED DISKS                                           #
+#										       #
+########################################################################################
+
+resource "azurerm_managed_disk" "data_disk" {
+  for_each             = { for d in var.data_disks : format("%s_%s", d.host_name, d.disk_name) => d }
+  name                 = each.key
+  location             = data.azurerm_resource_group.rg.location
+  resource_group_name  = data.azurerm_resource_group.rg.name
+  storage_account_type = each.value.storage_account_type
+  create_option        = each.value.create_option
+  disk_size_gb         = each.value.disk_size_gb
+
+  tags = var.tags
+}
+
+resource "azurerm_virtual_machine_data_disk_attachment" "datadisk_attach" {
+  for_each           = { for d in var.data_disks : format("%s_%s", d.host_name, d.disk_name) => d }
+  managed_disk_id    = azurerm_managed_disk.data_disk[each.key].id
+  virtual_machine_id = data.azurerm_virtual_machine.vm[each.value.host_name].id
+  caching            = each.value.caching
+  lun                = each.value.lun_id
+}
+
+########################################################################################
+#										       #
 #                           NETWORK INTERFACE RESOURCES                                #
 #										       #
 ########################################################################################
@@ -201,20 +241,6 @@ resource "azurerm_network_interface_backend_address_pool_association" "bgpool_as
   network_interface_id    = data.azurerm_network_interface.primary_nic[each.key].id
   ip_configuration_name   = element(data.azurerm_network_interface.primary_nic[each.key].ip_configuration.*.name, 0)
   backend_address_pool_id = azurerm_lb_backend_address_pool.bg_pool.id
-}
-
-########################################################################################
-#										       #
-#                     ASSOCIATE SHARED DISK TO LINUX VMS                               #
-#										       #
-########################################################################################
-
-resource "azurerm_virtual_machine_data_disk_attachment" "sd_attach" {
-  for_each           = var.cluster
-  managed_disk_id    = data.azurerm_managed_disk.shareddisk.id
-  virtual_machine_id = data.azurerm_virtual_machine.vm[each.key].id
-  caching            = "None"
-  lun                = "10"
 }
 
 ########################################################################################
