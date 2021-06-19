@@ -148,6 +148,13 @@ resource "azurerm_lb_rule" "lb_rule" {
   probe_id                       = element(azurerm_lb_probe.azlb.*.id, count.index)
 }
 
+resource "azurerm_network_interface_backend_address_pool_association" "bgpool_assoc" {
+  for_each                = var.cluster
+  network_interface_id    = data.azurerm_network_interface.primary_nic[each.key].id
+  ip_configuration_name   = element(data.azurerm_network_interface.primary_nic[each.key].ip_configuration.*.name, 0)
+  backend_address_pool_id = azurerm_lb_backend_address_pool.bg_pool.id
+}
+
 ########################################################################################
 #										       #
 #                           SHARED DISK RESOURCES                                      #
@@ -168,12 +175,6 @@ resource "azurerm_template_deployment" "sdisk_deployment" {
 
   deployment_mode = "Incremental"
 }
-
-########################################################################################
-#										       #
-#                     ASSOCIATE SHARED DISK TO LINUX VMS                               #
-#										       #
-########################################################################################
 
 resource "azurerm_virtual_machine_data_disk_attachment" "sd_attach" {
   for_each           = var.cluster
@@ -228,19 +229,6 @@ resource "azurerm_network_interface" "primary_nic" {
     private_ip_address            = each.value.private_ipaddress
     primary                       = true
   }
-}
-
-########################################################################################
-#										       #
-#                ASSOCIATE NETWORK INTERFACE TO LOAD BALANCER BACKEND POOL             #
-#										       #
-########################################################################################
-
-resource "azurerm_network_interface_backend_address_pool_association" "bgpool_assoc" {
-  for_each                = var.cluster
-  network_interface_id    = data.azurerm_network_interface.primary_nic[each.key].id
-  ip_configuration_name   = element(data.azurerm_network_interface.primary_nic[each.key].ip_configuration.*.name, 0)
-  backend_address_pool_id = azurerm_lb_backend_address_pool.bg_pool.id
 }
 
 ########################################################################################
