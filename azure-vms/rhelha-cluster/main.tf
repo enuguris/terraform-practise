@@ -3,7 +3,7 @@ terraform {
   required_providers {
     azurerm = {
       source  = "hashicorp/azurerm"
-      version = "=2.62.0"
+      version = "=2.64.0"
     }
   }
 }
@@ -19,13 +19,11 @@ module "hacluster" {
     node1 = {
       host_name                  = "azvm001"
       private_ip_addr_allocation = "Static"
-      public_ip_addr_allocation  = "Static"
       private_ipaddress          = "10.0.1.10"
     },
     node2 = {
       host_name                  = "azvm002"
       private_ip_addr_allocation = "Static"
-      public_ip_addr_allocation  = "Static"
       private_ipaddress          = "10.0.1.11"
     }
   }
@@ -50,6 +48,7 @@ module "hacluster" {
   frontend_name                          = "ha-lb"
   frontend_private_ip_address_allocation = "Static"
   frontend_private_ip_address            = "10.0.1.20"
+  backend_address_pool_name              = "bgpool_ha"
   lb_sku                                 = "Basic"
   lb_name                                = "lb-rhelha"
   enable_floating_ip                     = true

@@ -122,7 +122,6 @@ variable "cluster" {
   type = map(object({
     host_name                  = string
     private_ip_addr_allocation = string
-    public_ip_addr_allocation  = string
     private_ipaddress          = string
   }))
   description = "cluster values"
@@ -155,6 +154,8 @@ variable "max_shares" {
   default     = 2
 }
 
+
+
 variable "lb_type" {
   description = "Defined if the loadbalancer is private or public"
   type        = string
@@ -177,6 +178,11 @@ variable "frontend_private_ip_address_allocation" {
   type        = string
 }
 
+variable "backend_address_pool_name" {
+  description = "Backend Address Pool Name"
+  type        = string
+}
+
 variable "lb_sku" {
   description = "The SKU of the Azure Load Balancer. Accepted values are Basic and Standard."
   type        = string
@@ -195,6 +201,18 @@ variable "lb_probe" {
   default     = {}
 }
 
+variable "lb_probe_interval" {
+  description = "Probe Interval. Default is 15, minimum is 5."
+  type        = number
+  default     = 15
+}
+
+variable "lb_probe_unhealthy_threshold" {
+  description = "Failed probe attempts. Default value is 2."
+  type        = number
+  default     = 2
+}
+
 variable "lb_name" {
   description = "Name of the load balancer."
   type        = string
@@ -206,4 +224,8 @@ variable "enable_floating_ip" {
   default     = false
 }
 
-
+variable "idle_timeout_in_minutes" {
+  description = "TCP connections idle timeout in mins. Valid values between 4 and 30 minutes. Defaults to 4 mins"
+  type        = number
+  default     = 4
+}

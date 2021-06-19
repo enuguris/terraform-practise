@@ -2,13 +2,13 @@ terraform {
   required_providers {
     azurerm = {
       source  = "hashicorp/azurerm"
-      version = "~>2.62.0"
+      version = "~>2.64.0"
     }
   }
 }
 
 locals {
-  #  tags = var.tags
+  tags = var.tags
 }
 
 data "azurerm_resource_group" "rg" {
@@ -31,18 +31,25 @@ data "azurerm_subnet" "snet" {
   resource_group_name  = data.azurerm_resource_group.rg.name
 }
 
+data "azurerm_proximity_placement_group" "ppg" {
+  count               = var.enable_ppg ? 1 : 0
+  name                = var.proximity_placement_group
+  resource_group_name = data.azurerm_resource_group.rg.name
+  depends_on          = [azurerm_proximity_placement_group.ppg]
+}
+
+data "azurerm_availability_set" "avset" {
+  count               = var.enable_avset ? 1 : 0
+  name                = var.availability_set
+  resource_group_name = data.azurerm_resource_group.rg.name
+  depends_on          = [azurerm_availability_set.avset]
+}
+
 data "azurerm_network_interface" "primary_nic" {
   for_each            = var.cluster
   name                = "${each.value.host_name}_nic1"
   resource_group_name = data.azurerm_resource_group.rg.name
   depends_on          = [azurerm_network_interface.primary_nic]
-}
-
-data "azurerm_public_ip" "public_ip" {
-  for_each            = var.cluster
-  name                = "${each.value.host_name}_pub_ip"
-  resource_group_name = data.azurerm_resource_group.rg.name
-  depends_on          = [azurerm_public_ip.pip]
 }
 
 data "azurerm_storage_account" "stacbootdiaglnx" {
@@ -53,7 +60,7 @@ data "azurerm_storage_account" "stacbootdiaglnx" {
 data "azurerm_managed_disk" "shareddisk" {
   name                = var.shared_disk_name
   resource_group_name = data.azurerm_resource_group.rg.name
-  depends_on          = [module.shared_disk]
+  depends_on          = [azurerm_template_deployment.sdisk_deployment]
 }
 
 data "azurerm_virtual_machine" "vm" {
@@ -63,43 +70,110 @@ data "azurerm_virtual_machine" "vm" {
   depends_on          = [azurerm_linux_virtual_machine.linuxvm]
 }
 
-module "ppg_avset" {
-  source = "../azurerm-ppg-avset"
+########################################################################################
+#										       #
+#            PROXIMITY PLACEMENT GROUP AND AVAILABILITY SET RESOURCES                  #
+#										       #
+########################################################################################
 
-  resource_group_name       = var.resource_group_name
-  enable_ppg                = var.enable_ppg
-  enable_avset              = var.enable_avset
-  availability_set          = var.availability_set
-  proximity_placement_group = var.proximity_placement_group
-  tags                      = var.tags
+resource "azurerm_proximity_placement_group" "ppg" {
+  count               = var.enable_ppg ? 1 : 0
+  name                = var.proximity_placement_group
+  location            = data.azurerm_resource_group.rg.location
+  resource_group_name = data.azurerm_resource_group.rg.name
+
+  tags = var.tags
 }
 
-module "shared_disk" {
-  source = "../azurerm-shareddisk"
+resource "azurerm_availability_set" "avset" {
+  count                        = var.enable_avset ? 1 : 0
+  name                         = var.availability_set
+  location                     = data.azurerm_resource_group.rg.location
+  resource_group_name          = data.azurerm_resource_group.rg.name
+  proximity_placement_group_id = var.enable_ppg == true ? element(concat(data.azurerm_proximity_placement_group.ppg.*.id, [""]), 0) : null
 
-  count               = var.create_shareddisk == true ? 1 : 0
-  shared_disk_name    = var.shared_disk_name
-  resource_group_name = var.resource_group_name
-  shared_disk_size_gb = var.shared_disk_size_gb
-  max_shares          = var.max_shares
+  tags = var.tags
+}
+
+########################################################################################
+#										       #
+#                           LOAD BALANCER RESOURCES                                    #
+#										       #
+########################################################################################
+
+resource "azurerm_lb" "azlb" {
+  name                = var.lb_name
+  resource_group_name = data.azurerm_resource_group.rg.name
+  location            = data.azurerm_resource_group.rg.location
+  sku                 = var.lb_sku
   tags                = var.tags
+
+  frontend_ip_configuration {
+    name                          = var.frontend_name
+    subnet_id                     = data.azurerm_subnet.snet.id
+    private_ip_address            = var.frontend_private_ip_address
+    private_ip_address_allocation = var.frontend_private_ip_address_allocation
+  }
 }
 
-module "lb" {
-  source                                 = "../azurerm-lb"
-  resource_group_name                    = data.azurerm_resource_group.rg.name
-  type                                   = var.lb_type
-  frontend_name                          = var.frontend_name
-  frontend_subnet_id                     = data.azurerm_subnet.snet.id
-  frontend_private_ip_address_allocation = var.frontend_private_ip_address_allocation
-  frontend_private_ip_address            = var.frontend_private_ip_address
-  lb_sku                                 = var.lb_sku
-  name                                   = var.lb_name
-  enable_floating_ip                     = var.enable_floating_ip
-  lb_port                                = var.lb_port
-  lb_probe                               = var.lb_probe
-  tags                                   = var.tags
+resource "azurerm_lb_backend_address_pool" "bg_pool" {
+  name            = var.backend_address_pool_name
+  loadbalancer_id = azurerm_lb.azlb.id
 }
+
+resource "azurerm_lb_probe" "azlb" {
+  count               = length(var.lb_probe)
+  name                = element(keys(var.lb_probe), count.index)
+  resource_group_name = data.azurerm_resource_group.rg.name
+  loadbalancer_id     = azurerm_lb.azlb.id
+  protocol            = element(var.lb_probe[element(keys(var.lb_probe), count.index)], 0)
+  port                = element(var.lb_probe[element(keys(var.lb_probe), count.index)], 1)
+  interval_in_seconds = var.lb_probe_interval
+  number_of_probes    = var.lb_probe_unhealthy_threshold
+  request_path        = element(var.lb_probe[element(keys(var.lb_probe), count.index)], 2)
+}
+
+resource "azurerm_lb_rule" "lb_rule" {
+  count                          = length(var.lb_port)
+  name                           = element(keys(var.lb_port), count.index)
+  resource_group_name            = data.azurerm_resource_group.rg.name
+  loadbalancer_id                = azurerm_lb.azlb.id
+  protocol                       = element(var.lb_port[element(keys(var.lb_port), count.index)], 1)
+  frontend_port                  = element(var.lb_port[element(keys(var.lb_port), count.index)], 0)
+  backend_port                   = element(var.lb_port[element(keys(var.lb_port), count.index)], 2)
+  frontend_ip_configuration_name = var.frontend_name
+  enable_floating_ip             = var.enable_floating_ip
+  backend_address_pool_id        = azurerm_lb_backend_address_pool.bg_pool.id
+  idle_timeout_in_minutes        = var.idle_timeout_in_minutes
+  probe_id                       = element(azurerm_lb_probe.azlb.*.id, count.index)
+}
+
+########################################################################################
+#										       #
+#                           SHARED DISK RESOURCES                                      #
+#										       #
+########################################################################################
+
+resource "azurerm_template_deployment" "sdisk_deployment" {
+  name                = "deployment-${var.shared_disk_name}"
+  resource_group_name = var.resource_group_name
+
+  template_body = file("${path.module}/az-shareddisk.json")
+
+  parameters = {
+    "dataDiskName"   = var.shared_disk_name
+    "dataDiskSizeGB" = var.shared_disk_size_gb
+    "maxShares"      = var.max_shares
+  }
+
+  deployment_mode = "Incremental"
+}
+
+########################################################################################
+#										       #
+#                           NETWORK INTERFACE RESOURCES                                #
+#										       #
+########################################################################################
 
 resource "azurerm_network_interface" "primary_nic" {
   for_each            = var.cluster
@@ -113,26 +187,27 @@ resource "azurerm_network_interface" "primary_nic" {
     private_ip_address_allocation = each.value.private_ip_addr_allocation
     private_ip_address            = each.value.private_ipaddress
     primary                       = true
-    public_ip_address_id          = data.azurerm_public_ip.public_ip[each.key].id
   }
 }
+
+########################################################################################
+#										       #
+#                ASSOCIATE NETWORK INTERFACE TO LOAD BALANCER BACKEND POOL             #
+#										       #
+########################################################################################
 
 resource "azurerm_network_interface_backend_address_pool_association" "bgpool_assoc" {
   for_each                = var.cluster
   network_interface_id    = data.azurerm_network_interface.primary_nic[each.key].id
   ip_configuration_name   = element(data.azurerm_network_interface.primary_nic[each.key].ip_configuration.*.name, 0)
-  backend_address_pool_id = module.lb.azurerm_lb_backend_address_pool_id
+  backend_address_pool_id = azurerm_lb_backend_address_pool.bg_pool.id
 }
 
-resource "azurerm_public_ip" "pip" {
-  for_each            = var.cluster
-  name                = "${each.value.host_name}_pub_ip"
-  resource_group_name = data.azurerm_resource_group.rg.name
-  location            = data.azurerm_resource_group.rg.location
-  allocation_method   = each.value.public_ip_addr_allocation
-
-  tags = var.tags
-}
+########################################################################################
+#										       #
+#                     ASSOCIATE SHARED DISK TO LINUX VMS                               #
+#										       #
+########################################################################################
 
 resource "azurerm_virtual_machine_data_disk_attachment" "sd_attach" {
   for_each           = var.cluster
@@ -141,6 +216,12 @@ resource "azurerm_virtual_machine_data_disk_attachment" "sd_attach" {
   caching            = "None"
   lun                = "10"
 }
+
+########################################################################################
+#										       #
+#                      AZURE LINUX VM RESOURCE                                         #
+#										       #
+########################################################################################
 
 resource "azurerm_linux_virtual_machine" "linuxvm" {
   for_each                     = var.cluster
@@ -151,8 +232,8 @@ resource "azurerm_linux_virtual_machine" "linuxvm" {
   allow_extension_operations   = true
   size                         = var.vm_size
   admin_username               = var.admin_username
-  availability_set_id          = var.enable_avset == true ? module.ppg_avset.availability_set_id : null
-  proximity_placement_group_id = var.enable_ppg == true ? module.ppg_avset.proximity_placement_group_id : null
+  availability_set_id          = var.enable_avset == true ? element(concat(data.azurerm_availability_set.avset.*.id, [""]), 0) : null
+  proximity_placement_group_id = var.enable_ppg == true ? element(concat(data.azurerm_proximity_placement_group.ppg.*.id, [""]), 0) : null
 
   admin_ssh_key {
     username   = var.admin_username
@@ -175,7 +256,7 @@ resource "azurerm_linux_virtual_machine" "linuxvm" {
     publisher = var.publisher
     product   = var.product
   }
-*/
+  */
 
   os_disk {
     name                 = "${each.value.host_name}_osdisk"
@@ -189,5 +270,5 @@ resource "azurerm_linux_virtual_machine" "linuxvm" {
 
   tags = var.tags
 
-  depends_on = [azurerm_network_interface.primary_nic, module.ppg_avset, module.shared_disk]
+  depends_on = [azurerm_network_interface.primary_nic, azurerm_template_deployment.sdisk_deployment]
 }
