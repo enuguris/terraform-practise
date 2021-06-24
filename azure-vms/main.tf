@@ -61,6 +61,12 @@ resource "azurerm_virtual_network" "main" {
     address_prefix = "10.0.1.0/24"
     security_group = data.azurerm_network_security_group.ds_az_nsg_01.id
   }
+
+  subnet {
+    name           = "snet_general_002"
+    address_prefix = "10.0.2.0/24"
+    security_group = data.azurerm_network_security_group.ds_az_nsg_01.id
+  }
 }
 
 data "azurerm_virtual_network" "ds_vnet_main" {
