@@ -13,10 +13,10 @@ locals {
   #their respective ip addresses. It is further validated to check if all 
   #subnets ids are same, else an empty subnet list is returned.
 
-  vms_subnet_id = distinct(flatten([for s in var.cluster : module.vms_subnet_id[s.host_name].subnetid]))
-  lb_subnet_id  = module.lb_subnetid.subnetid != [] ? module.lb_subnetid.subnetid : [""]
-  concat_subnet_ids = distinct(concat(local.vms_subnet_id, local.lb_subnet_id))
-  subnet_id = length(local.concat_subnet_ids) == 1 ? local.concat_subnet_ids : []
+  vms_subnet_id     = flatten([for s in var.cluster : module.vms_subnet_id[s.host_name].subnetid])
+  lb_subnet_id      = module.lb_subnetid.subnetid != [] ? module.lb_subnetid.subnetid : [""]
+  concat_subnet_ids = length(local.vms_subnet_id) == 2 ? distinct(concat(local.vms_subnet_id, local.lb_subnet_id)) : [""]
+  subnet_id         = length(local.concat_subnet_ids) == 1 ? local.concat_subnet_ids : []
 
   tags = var.tags
 }
@@ -25,11 +25,7 @@ data "azurerm_resource_group" "rg" {
   name = var.resource_group_name
 }
 
-data "azurerm_network_security_group" "nsg" {
-  name                = var.nsg_name
-  resource_group_name = data.azurerm_resource_group.rg.name
-}
-
+/*
 data "azurerm_virtual_network" "vnet" {
   name                = var.vnet_name
   resource_group_name = data.azurerm_resource_group.rg.name
@@ -40,6 +36,7 @@ data "azurerm_subnet" "snet" {
   virtual_network_name = data.azurerm_virtual_network.vnet.name
   resource_group_name  = data.azurerm_resource_group.rg.name
 }
+*/
 
 data "azurerm_proximity_placement_group" "ppg" {
   count               = var.enable_ppg ? 1 : 0
@@ -109,7 +106,8 @@ resource "azurerm_proximity_placement_group" "ppg" {
   location            = data.azurerm_resource_group.rg.location
   resource_group_name = data.azurerm_resource_group.rg.name
 
-  tags = var.tags
+  tags       = var.tags
+  depends_on = [azurerm_lb.azlb]
 }
 
 resource "azurerm_availability_set" "avset" {
@@ -119,7 +117,8 @@ resource "azurerm_availability_set" "avset" {
   resource_group_name          = data.azurerm_resource_group.rg.name
   proximity_placement_group_id = var.enable_ppg == true ? element(concat(data.azurerm_proximity_placement_group.ppg.*.id, [""]), 0) : null
 
-  tags = var.tags
+  tags       = var.tags
+  depends_on = [azurerm_lb.azlb]
 }
 
 ########################################################################################
@@ -137,7 +136,7 @@ resource "azurerm_lb" "azlb" {
 
   frontend_ip_configuration {
     name                          = var.frontend_name
-    subnet_id                     = data.azurerm_subnet.snet.id
+    subnet_id                     = local.subnet_id[0]
     private_ip_address            = var.frontend_private_ip_address
     private_ip_address_allocation = var.frontend_private_ip_address_allocation
   }
@@ -201,6 +200,8 @@ resource "azurerm_template_deployment" "sdisk_deployment" {
   }
 
   deployment_mode = "Incremental"
+
+  depends_on = [azurerm_lb.azlb]
 }
 
 resource "azurerm_virtual_machine_data_disk_attachment" "sd_attach" {
@@ -251,7 +252,7 @@ resource "azurerm_network_interface" "primary_nic" {
 
   ip_configuration {
     name                          = "nic1"
-    subnet_id                     = data.azurerm_subnet.snet.id
+    subnet_id                     = local.subnet_id[0]
     private_ip_address_allocation = each.value.private_ip_addr_allocation
     private_ip_address            = each.value.private_ipaddress
     primary                       = true

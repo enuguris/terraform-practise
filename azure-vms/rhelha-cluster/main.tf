@@ -68,9 +68,6 @@ module "hacluster" {
   ]
 
   resource_group_name       = "rg-rhelha"
-  nsg_name                  = "az_nsg_01"
-  vnet_name                 = "az_vnet_eastus"
-  snet_name                 = "snet_general_001"
   bootdiag_storage_account  = "stacbootdiaglnx"
   vm_size                   = "Standard_D2s_v3"
   admin_username            = "vmimport"
