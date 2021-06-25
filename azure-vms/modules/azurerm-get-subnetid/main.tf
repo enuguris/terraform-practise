@@ -7,10 +7,6 @@ terraform {
   }
 }
 
-provider "azurerm" {
-  features {}
-}
-
 data "azurerm_resources" "vnet_resources" {
   type = "Microsoft.Network/virtualNetworks"
 }
@@ -51,8 +47,4 @@ locals {
       s.id => (cidrhost(format("%s/%s", local.private_ip, split("/", s.address_prefix)[1]), 0) == split("/", s.address_prefix)[0] ? true : false)
     } : k if v == true
   ]
-}
-
-output "selected_subnet_id" {
-  value = local.selected_subnet_id
 }

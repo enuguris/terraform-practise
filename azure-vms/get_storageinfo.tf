@@ -14,6 +14,7 @@ required_providers {
 data "azurerm_storage_account" "stacbootdiaglnx" {
   name                = "stacbootdiaglnx"
   resource_group_name = "rg-rhelha"
+  depends_on          = [azurerm_resource_group.rhelha]
 }
 
 output "stacbootdiaglnx_info" {

@@ -8,6 +8,16 @@ terraform {
 }
 
 locals {
+  #To ensure vms and load balancer ip addresses belong to the same subnet
+  #those values are passed to a module that would return the subnet id for
+  #their respective ip addresses. It is further validated to check if all 
+  #subnets ids are same, else an empty subnet list is returned.
+
+  vms_subnet_id = distinct(flatten([for s in var.cluster : module.vms_subnet_id[s.host_name].subnetid]))
+  lb_subnet_id  = module.lb_subnetid.subnetid != [] ? module.lb_subnetid.subnetid : [""]
+  concat_subnet_ids = distinct(concat(local.vms_subnet_id, local.lb_subnet_id))
+  subnet_id = length(local.concat_subnet_ids) == 1 ? local.concat_subnet_ids : []
+
   tags = var.tags
 }
 
@@ -68,6 +78,23 @@ data "azurerm_virtual_machine" "vm" {
   name                = each.value.host_name
   resource_group_name = data.azurerm_resource_group.rg.name
   depends_on          = [azurerm_linux_virtual_machine.linuxvm]
+}
+
+########################################################################################
+#										       #
+# 	          GET LOADBALANCER AND CLUSTER NODES SUBNET IDS	                       #
+#										       #
+########################################################################################
+
+module "vms_subnet_id" {
+  source     = "../azurerm-get-subnetid"
+  for_each   = var.cluster
+  private_ip = each.value.private_ipaddress
+}
+
+module "lb_subnetid" {
+  source     = "../azurerm-get-subnetid"
+  private_ip = var.frontend_private_ip_address
 }
 
 ########################################################################################

@@ -19,7 +19,8 @@ resource "azurerm_resource_group" "rhelha" {
 }
 
 data "azurerm_resource_group" "rg_ds" {
-  name = "rg-rhelha"
+  name       = "rg-rhelha"
+  depends_on = [azurerm_resource_group.rhelha]
 }
 
 resource "azurerm_network_security_group" "az_nsg_01" {
@@ -42,11 +43,13 @@ resource "azurerm_network_security_group" "az_nsg_01" {
   tags = {
     environment = "development"
   }
+  depends_on = [azurerm_resource_group.rhelha]
 }
 
 data "azurerm_network_security_group" "ds_az_nsg_01" {
   name                = "az_nsg_01"
   resource_group_name = data.azurerm_resource_group.rg_ds.name
+  depends_on          = [azurerm_resource_group.rhelha]
 }
 
 resource "azurerm_virtual_network" "main" {
@@ -67,17 +70,20 @@ resource "azurerm_virtual_network" "main" {
     address_prefix = "10.0.2.0/24"
     security_group = data.azurerm_network_security_group.ds_az_nsg_01.id
   }
+  depends_on = [azurerm_resource_group.rhelha]
 }
 
 data "azurerm_virtual_network" "ds_vnet_main" {
   name                = "az_vnet_eastus"
   resource_group_name = data.azurerm_resource_group.rg_ds.name
+  depends_on = [azurerm_virtual_network.main]
 }
 
 data "azurerm_subnet" "ds_snet_general_001" {
   name                 = element(data.azurerm_virtual_network.ds_vnet_main.subnets, 0)
   virtual_network_name = data.azurerm_virtual_network.ds_vnet_main.name
   resource_group_name  = data.azurerm_resource_group.rg_ds.name
+  depends_on           = [azurerm_resource_group.rhelha]
 }
 
 resource "azurerm_storage_account" "stacbootdiaglnx" {
@@ -90,6 +96,7 @@ resource "azurerm_storage_account" "stacbootdiaglnx" {
   tags = {
     environment = "staging"
   }
+  depends_on = [azurerm_resource_group.rhelha]
 }
 
 /*
