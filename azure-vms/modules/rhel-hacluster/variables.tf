@@ -3,23 +3,6 @@ variable "resource_group_name" {
   type        = string
 }
 
-/*
-variable "nsg_name" {
-  description = "Network Security Group"
-  type        = string
-}
-
-variable "vnet_name" {
-  description = "Virtual Network Name"
-  type        = string
-}
-
-variable "snet_name" {
-  description = "Subnet Name"
-  type        = string
-}
-*/
-
 variable "bootdiag_storage_account" {
   description = "Storage Account to store boot diagnostic"
   type        = string
@@ -54,7 +37,6 @@ variable "offer" {
   type        = string
   default     = "RHEL"
 }
-
 
 variable "sku" {
   description = "SKU"
@@ -160,8 +142,6 @@ variable "max_shares" {
   type        = number
   default     = 2
 }
-
-
 
 variable "lb_type" {
   description = "Defined if the loadbalancer is private or public"
