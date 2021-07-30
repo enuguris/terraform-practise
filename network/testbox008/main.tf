@@ -1,11 +1,18 @@
 terraform {
-  required_version = "= 0.14.7"
+  required_version = "= 1.0.3"
   required_providers {
     aws = {
       source  = "hashicorp/aws"
       version = "~> 3.0"
     }
   }
+
+  backend "s3" {
+    bucket = "tf-state-1-03"
+    key    = "ec2/testbox008/instance-state.tf"
+    region = "us-east-1"
+  }
+
 }
 
 provider "aws" {
@@ -27,6 +34,7 @@ module "ec2" {
   Maintainer    = "terraform"
   tags          = { erequestnumber = "ER#12345" }
 
+  /*
   ebs_block_devices = [
     {
       size             = "1"
@@ -43,6 +51,7 @@ module "ec2" {
       additional_tags  = { eReq = "1234", Maintainer = "terraform" }
     },
   ]
+*/
 }
 
 output "private_ip" {

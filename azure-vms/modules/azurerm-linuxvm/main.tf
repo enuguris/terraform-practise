@@ -2,7 +2,7 @@ terraform {
   required_providers {
     azurerm = {
       source  = "hashicorp/azurerm"
-      version = "~>2.62.0"
+      version = "~>2.69.0"
     }
   }
 }
@@ -85,11 +85,11 @@ resource "azurerm_public_ip" "pip" {
 }
 
 resource "azurerm_linux_virtual_machine" "linuxvm" {
-  name                         = var.host_name
-  location                     = data.azurerm_resource_group.rg.location
-  resource_group_name          = data.azurerm_resource_group.rg.name
-  network_interface_ids        = [data.azurerm_network_interface.primary_nic.id]
-  allow_extension_operations   = true
+  name                       = var.host_name
+  location                   = data.azurerm_resource_group.rg.location
+  resource_group_name        = data.azurerm_resource_group.rg.name
+  network_interface_ids      = [data.azurerm_network_interface.primary_nic.id]
+  allow_extension_operations = true
   #encryption_at_host_enabled   = true
   size                         = var.vm_size
   admin_username               = var.admin_username
@@ -128,6 +128,8 @@ resource "azurerm_linux_virtual_machine" "linuxvm" {
   boot_diagnostics {
     storage_account_uri = data.azurerm_storage_account.stacbootdiaglnx.primary_blob_endpoint
   }
+
+  custom_data = filebase64("${path.module}/config/cloud-init.cfg")
 
   tags = local.tags
 
